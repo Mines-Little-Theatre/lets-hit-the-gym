@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	gym "github.com/Mines-Little-Theatre/lets-hit-the-gym"
+	"github.com/bwmarrin/discordgo"
 )
 
 var (
@@ -60,7 +61,14 @@ func main() {
 	if len(userMentions) > 0 {
 		var buf bytes.Buffer
 		templates.ExecuteTemplate(&buf, "message.txt", userMentions)
-		_, err := conn.Bot.ChannelMessageSend(channelID, strings.TrimSpace(buf.String()))
+		_, err := conn.Bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+			Content: strings.TrimSpace(buf.String()),
+			AllowedMentions: &discordgo.MessageAllowedMentions{
+				Parse:       []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+				RepliedUser: false,
+			},
+			Reference: &discordgo.MessageReference{MessageID: lastScheduleMessageID},
+		})
 		if err != nil {
 			conn.Close()
 			log.Fatalln("send message:", err)
