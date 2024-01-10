@@ -3,6 +3,7 @@ module github.com/Mines-Little-Theatre/lets-hit-the-gym
 go 1.21.5
 
 require (
+	github.com/alecthomas/kong v0.8.1
 	github.com/bwmarrin/discordgo v0.27.1
 	modernc.org/sqlite v1.28.0
 )

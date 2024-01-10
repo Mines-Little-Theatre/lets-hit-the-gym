@@ -1,4 +1,4 @@
-package gym
+package main
 
 import (
 	"errors"
