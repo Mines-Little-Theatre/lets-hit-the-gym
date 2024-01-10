@@ -1,0 +1,3 @@
+Looks like we've got some people headed for the gym!
+{{ range . }}- {{ . }}
+{{ end }}
