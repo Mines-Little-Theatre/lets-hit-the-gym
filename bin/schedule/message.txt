@@ -1,5 +1,4 @@
 Ready to work out today? React with when you're coming:
-
 - 2️⃣ if you plan to arrive at 2pm
 - 3️⃣ if you plan to arrive at 3pm
 - 4️⃣ if you plan to arrive at 4pm
