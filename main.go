@@ -15,8 +15,9 @@ var (
 )
 
 type CommandLine struct {
-	Schedule ScheduleCmd `cmd:"" help:"Post a schedule message"`
+	Doctor   DoctorCmd   `cmd:"" help:"Check the configuration for potential issues"`
 	Remind   RemindCmd   `cmd:"" help:"Post a reminder message"`
+	Schedule ScheduleCmd `cmd:"" help:"Post a schedule message"`
 }
 
 func main() {

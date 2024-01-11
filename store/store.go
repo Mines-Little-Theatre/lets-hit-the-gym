@@ -114,6 +114,26 @@ func (s *Store) GetWorkout(name string) (Workout, error) {
 	return result, nil
 }
 
+func (s *Store) GetWorkoutNames() ([]string, error) {
+	result := make([]string, 0)
+	rows, err := s.db.Query(queries.Get("get_workout_names"))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var s string
+		err := rows.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (s *Store) Close() error {
 	return s.db.Close()
 }
