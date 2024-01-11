@@ -11,7 +11,7 @@ import (
 
 const (
 	applicationID uint32 = 0x4c696654
-	userVersion   uint32 = 1
+	userVersion   uint32 = 2
 )
 
 // much of this is copied from the lean bot, maybe I should make a library
@@ -23,6 +23,12 @@ type Store struct {
 func Open(dataSourceName string) (*Store, error) {
 	db, err := sql.Open("sqlite", dataSourceName)
 	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		db.Close()
 		return nil, err
 	}
 
@@ -77,6 +83,35 @@ func (s *Store) GetLastScheduleMessageID() (string, error) {
 
 func (s *Store) UpdateLastScheduleMessageID(id string) error {
 	return putKV(s.db, "last_schedule_message_id", id)
+}
+
+func (s *Store) GetWorkout(name string) (Workout, error) {
+	var result Workout
+
+	row := s.db.QueryRow(queries.Get("get_workout"), name)
+	err := row.Scan(&result.Title, &result.Description, &result.Color)
+	if err != nil {
+		return result, err
+	}
+
+	result.Routines = make([]Routine, 0)
+	rows, err := s.db.Query(queries.Get("get_workout_routines"), name)
+	if err != nil {
+		return result, err
+	}
+	for rows.Next() {
+		var r Routine
+		err := rows.Scan(&r.Title, &r.Description)
+		if err != nil {
+			return result, err
+		}
+		result.Routines = append(result.Routines, r)
+	}
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
 func (s *Store) Close() error {
