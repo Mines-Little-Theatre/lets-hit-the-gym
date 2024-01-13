@@ -25,8 +25,16 @@ Then set it up to run on a schedule using cron!
 ```
 0 7 * * * <executable> schedule
 
+50 8 * * * <executable> remind 9️⃣
+50 9 * * * <executable> remind 🔟
+50 10 * * * <executable> remind 🇪
+50 11 * * * <executable> remind 🇳
+50 12 * * * <executable> remind 1️⃣
 50 13 * * * <executable> remind 2️⃣
 50 14 * * * <executable> remind 3️⃣
 50 15 * * * <executable> remind 4️⃣
 50 16 * * * <executable> remind 5️⃣
+50 17 * * * <executable> remind 6️⃣
+50 18 * * * <executable> remind 7️⃣
+50 19 * * * <executable> remind 8️⃣
 ```
