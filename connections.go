@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
+	"log"
 
 	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store"
 	"github.com/Mines-Little-Theatre/lets-hit-the-gym/util"
@@ -14,17 +16,23 @@ type Connections struct {
 }
 
 func Connect() (*Connections, error) {
-	botToken := util.ReadEnv("GYM_TOKEN")
-	dbName := util.ReadEnv("GYM_DB")
-
-	bot, err := discordgo.New(botToken)
+	store, err := store.Open(util.ReadEnv("GYM_BOT_DB"))
 	if err != nil {
 		return nil, err
 	}
 
-	store, err := store.Open(dbName)
+	botToken, err := store.GetToken()
 	if err != nil {
-		bot.Close()
+		store.Close()
+		if err == sql.ErrNoRows {
+			log.Println("token not found")
+		}
+		return nil, err
+	}
+
+	bot, err := discordgo.New(botToken)
+	if err != nil {
+		store.Close()
 		return nil, err
 	}
 

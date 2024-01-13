@@ -73,6 +73,10 @@ func Open(dataSourceName string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
+func (s *Store) GetToken() (string, error) {
+	return getKV[string](s.db, "token")
+}
+
 func (s *Store) GetChannelID() (string, error) {
 	return getKV[string](s.db, "channel_id")
 }
