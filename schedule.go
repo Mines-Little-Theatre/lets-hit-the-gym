@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -13,8 +14,13 @@ type ScheduleCmd struct {
 	Workout string `arg:"" optional:"" name:"workout" help:"Name of the workout card to display"`
 }
 
-func (c *ScheduleCmd) Run(conn *Connections) error {
-	channelID, err := conn.Store.GetChannelID()
+func (c *ScheduleCmd) Run(store *store.Store) error {
+	bot, err := connectBot(store)
+	if err != nil {
+		return err
+	}
+
+	channelID, err := store.GetChannelID()
 	if err != nil {
 		return fmt.Errorf("get channel ID: %w", err)
 	}
@@ -28,7 +34,7 @@ func (c *ScheduleCmd) Run(conn *Connections) error {
 
 	var embeds []*discordgo.MessageEmbed
 	if c.Workout != "" {
-		workout, err := conn.Store.GetWorkout(c.Workout)
+		workout, err := store.GetWorkout(c.Workout)
 		if err != nil {
 			log.Println("get workout:", err)
 		} else {
@@ -48,7 +54,7 @@ func (c *ScheduleCmd) Run(conn *Connections) error {
 		}
 	}
 
-	message, err := conn.Bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+	message, err := bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Content: content,
 		Embeds:  embeds,
 	})
@@ -56,7 +62,7 @@ func (c *ScheduleCmd) Run(conn *Connections) error {
 		return fmt.Errorf("send message: %w", err)
 	}
 
-	err = conn.Store.UpdateLastScheduleMessageID(message.ID)
+	err = store.UpdateLastScheduleMessageID(message.ID)
 	if err != nil {
 		return fmt.Errorf("update last schedule message ID: %w", err)
 	}

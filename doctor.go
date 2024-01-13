@@ -4,20 +4,26 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store"
 	"github.com/bwmarrin/discordgo"
 )
 
 type DoctorCmd struct{}
 
-func (*DoctorCmd) Run(conn *Connections) error {
-	user, err := conn.Bot.User("@me")
+func (*DoctorCmd) Run(store *store.Store) error {
+	bot, err := connectBot(store)
+	if err != nil {
+		return err
+	}
+
+	user, err := bot.User("@me")
 	if err != nil {
 		fmt.Println("Could not login bot:", err)
 		return nil
 	}
 	fmt.Println("Bot auth successful:", user.Username)
 
-	channelID, err := conn.Store.GetChannelID()
+	channelID, err := store.GetChannelID()
 	if err == sql.ErrNoRows {
 		fmt.Println("No channel ID set!")
 		return nil
@@ -26,7 +32,7 @@ func (*DoctorCmd) Run(conn *Connections) error {
 		return nil
 	}
 
-	channel, err := conn.Bot.Channel(channelID)
+	channel, err := bot.Channel(channelID)
 	if err != nil {
 		fmt.Println("Could not retrieve channel information:", err)
 		return nil
@@ -36,12 +42,12 @@ func (*DoctorCmd) Run(conn *Connections) error {
 		fmt.Println("(warning: channel is not a standard text channel)")
 	}
 
-	guild, err := conn.Bot.Guild(channel.GuildID)
+	guild, err := bot.Guild(channel.GuildID)
 	if err != nil {
 		fmt.Println("Could not retrieve guild information:", err)
 		return nil
 	}
-	member, err := conn.Bot.GuildMember(guild.ID, user.ID)
+	member, err := bot.GuildMember(guild.ID, user.ID)
 	if err != nil {
 		fmt.Println("Could not retrieve guild member information:", err)
 		return nil
@@ -70,7 +76,7 @@ func (*DoctorCmd) Run(conn *Connections) error {
 		}
 	}
 
-	workoutNames, err := conn.Store.GetWorkoutNames()
+	workoutNames, err := store.GetWorkoutNames()
 	if err != nil {
 		fmt.Println("Could not load workout names:", err)
 	} else {

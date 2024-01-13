@@ -77,8 +77,16 @@ func (s *Store) GetToken() (string, error) {
 	return getKV[string](s.db, "token")
 }
 
+func (s *Store) UpdateToken(token string) error {
+	return putKV(s.db, "token", token)
+}
+
 func (s *Store) GetChannelID() (string, error) {
 	return getKV[string](s.db, "channel_id")
+}
+
+func (s *Store) UpdateChannelID(id string) error {
+	return putKV(s.db, "channel_id", id)
 }
 
 func (s *Store) GetLastScheduleMessageID() (string, error) {

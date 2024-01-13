@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -12,13 +13,18 @@ type RemindCmd struct {
 	Emoji string `arg:"" name:"emoji" help:"Reaction to check for (unicode emoji or name:id)"`
 }
 
-func (c *RemindCmd) Run(conn *Connections) error {
-	channelID, err := conn.Store.GetChannelID()
+func (c *RemindCmd) Run(store *store.Store) error {
+	bot, err := connectBot(store)
+	if err != nil {
+		return err
+	}
+
+	channelID, err := store.GetChannelID()
 	if err != nil {
 		return fmt.Errorf("get channel ID: %w", err)
 	}
 
-	lastScheduleMessageID, err := conn.Store.GetLastScheduleMessageID()
+	lastScheduleMessageID, err := store.GetLastScheduleMessageID()
 	if err != nil {
 		return fmt.Errorf("get last schedule message ID: %w", err)
 	}
@@ -26,7 +32,7 @@ func (c *RemindCmd) Run(conn *Connections) error {
 	userMentions := make([]string, 0)
 	afterID := ""
 	for {
-		users, err := conn.Bot.MessageReactions(channelID, lastScheduleMessageID, c.Emoji, 100, "", afterID)
+		users, err := bot.MessageReactions(channelID, lastScheduleMessageID, c.Emoji, 100, "", afterID)
 		if err != nil {
 			return fmt.Errorf("get reactions: %w", err)
 		}
@@ -45,7 +51,7 @@ func (c *RemindCmd) Run(conn *Connections) error {
 		if err != nil {
 			return fmt.Errorf("execute template: %w", err)
 		}
-		_, err = conn.Bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+		_, err = bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 			Content: strings.TrimSpace(buf.String()),
 			AllowedMentions: &discordgo.MessageAllowedMentions{
 				Parse:       []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},

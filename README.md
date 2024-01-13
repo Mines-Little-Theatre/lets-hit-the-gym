@@ -4,31 +4,29 @@ A Discord bot that helps coordinate the Mines Lifting Thespians.
 
 ## Installation and Usage
 
-You will need to set two environment variables:
+Set the `GYM_BOT_DB` environment variable to a path where the application can create an SQLite database.
 
-- `GYM_BOT_TOKEN`: your authorization token, starting with "Bot"
-- `GYM_BOT_DB`: a path to an SQLite database
-
-Run the `schedule` program to create the database:
+Configure the application:
 
 ```sh
-go run ./bin/schedule
+go run . config --token 'Bot ...' --channel-id ...
 ```
 
-It will exit with an error because the newly-created database does not have a channel ID set. Use the `sqlite3` program to connect to the database and set the channel ID:
+Check for any issues:
 
-```sql
-INSERT INTO kv_store (key, value) VALUES ('channel_id', '{{ your channel ID }}');
+```sh
+go run . doctor
 ```
 
 Then set it up to run on a schedule using cron!
 
-### Suggested crontab
+### Example crontab
 
 ```
-0 12 * * MON-FRI .../schedule
-50 13 * * MON-FRI .../remind 2️⃣
-50 14 * * MON-FRI .../remind 3️⃣
-50 15 * * MON-FRI .../remind 4️⃣
-50 16 * * MON-FRI .../remind 5️⃣
+0 7 * * * <executable> schedule
+
+50 13 * * * <executable> remind 2️⃣
+50 14 * * * <executable> remind 3️⃣
+50 15 * * * <executable> remind 4️⃣
+50 16 * * * <executable> remind 5️⃣
 ```
