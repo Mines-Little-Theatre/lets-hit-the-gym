@@ -51,7 +51,8 @@ func (*DoctorCmd) Run(conn *Connections) error {
 	canViewChannel := channelPermissions&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel
 	canSendMessages := channelPermissions&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages
 	canReadMessageHistory := channelPermissions&discordgo.PermissionReadMessageHistory == discordgo.PermissionReadMessageHistory
-	if canViewChannel && canSendMessages && canReadMessageHistory {
+	canEmbedLinks := channelPermissions&discordgo.PermissionEmbedLinks == discordgo.PermissionEmbedLinks
+	if canViewChannel && canSendMessages && canReadMessageHistory && canEmbedLinks {
 		fmt.Println("All necessary channel permissions are available")
 	} else {
 		fmt.Println("Some necessary channel permissions are missing:")
@@ -64,7 +65,9 @@ func (*DoctorCmd) Run(conn *Connections) error {
 		if !canReadMessageHistory {
 			fmt.Println("- Read Message History")
 		}
-		return nil
+		if !canEmbedLinks {
+			fmt.Println("- Embed Links")
+		}
 	}
 
 	workoutNames, err := conn.Store.GetWorkoutNames()
