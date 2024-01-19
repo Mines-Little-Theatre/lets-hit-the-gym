@@ -1,5 +1,11 @@
 package store
 
+type Day struct {
+	OpenHour  int
+	CloseHour int
+	Workout   *Workout
+}
+
 type Workout struct {
 	Title       string
 	Description string

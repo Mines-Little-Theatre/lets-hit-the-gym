@@ -11,7 +11,7 @@ import (
 
 const (
 	applicationID uint32 = 0x4c696654
-	userVersion   uint32 = 2
+	userVersion   uint32 = 3
 )
 
 // much of this is copied from the lean bot, maybe I should make a library
@@ -97,38 +97,63 @@ func (s *Store) UpdateLastScheduleMessageID(id string) error {
 	return putKV(s.db, "last_schedule_message_id", id)
 }
 
-func (s *Store) GetWorkout(name string) (Workout, error) {
-	var result Workout
-
-	row := s.db.QueryRow(queries.Get("get_workout"), name)
-	err := row.Scan(&result.Title, &result.Description, &result.Color)
+func (s *Store) GetDay(name string) (*Day, error) {
+	rows, err := s.db.Query(queries.Get("get_day"), name)
 	if err != nil {
-		return result, err
+		return nil, err
+	}
+	if !rows.Next() {
+		return nil, rows.Err()
 	}
 
-	result.Routines = make([]Routine, 0)
-	rows, err := s.db.Query(queries.Get("get_workout_routines"), name)
+	day := new(Day)
+	var (
+		workoutTitle, workoutDescription *string
+		workoutColor                     *int
+
+		routineTitle, routineDescription *string
+	)
+	err = rows.Scan(&day.OpenHour, &day.CloseHour, &workoutTitle, &workoutDescription, &workoutColor, &routineTitle, &routineDescription)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
-	for rows.Next() {
-		var r Routine
-		err := rows.Scan(&r.Title, &r.Description)
-		if err != nil {
-			return result, err
+	if workoutTitle != nil {
+		day.Workout = &Workout{
+			Title:       *workoutTitle,
+			Description: *workoutDescription,
+			Color:       *workoutColor,
 		}
-		result.Routines = append(result.Routines, r)
-	}
-	if err := rows.Err(); err != nil {
-		return result, err
+		if routineTitle != nil {
+			day.Workout.Routines = append(day.Workout.Routines, Routine{
+				Title:       *routineTitle,
+				Description: *routineDescription,
+			})
+			for rows.Next() {
+				var routine Routine
+				err := rows.Scan(new(int), new(int), new(string), new(string), new(int), &routine.Title, &routine.Description)
+				if err != nil {
+					return nil, err
+				}
+				day.Workout.Routines = append(day.Workout.Routines, routine)
+			}
+			if rows.Err() != nil {
+				return nil, rows.Err()
+			}
+			return day, nil
+		}
 	}
 
-	return result, nil
+	err = rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return day, nil
 }
 
-func (s *Store) GetWorkoutNames() ([]string, error) {
+func (s *Store) GetDayNames() ([]string, error) {
 	result := make([]string, 0)
-	rows, err := s.db.Query(queries.Get("get_workout_names"))
+	rows, err := s.db.Query(queries.Get("get_day_names"))
 	if err != nil {
 		return nil, err
 	}

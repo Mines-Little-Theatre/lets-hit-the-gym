@@ -11,7 +11,7 @@ import (
 )
 
 type ScheduleCmd struct {
-	Workout string `arg:"" optional:"" name:"workout" help:"Name of the workout card to display"`
+	Day string `arg:"" name:"day" help:"The name of the day"`
 }
 
 func (c *ScheduleCmd) Run(store *store.Store) error {
@@ -19,6 +19,15 @@ func (c *ScheduleCmd) Run(store *store.Store) error {
 	if err != nil {
 		return err
 	}
+
+	day, err := store.GetDay(c.Day)
+	if err != nil {
+		return fmt.Errorf("get day: %w", err)
+	} else if day == nil {
+		return fmt.Errorf("invalid day: %s", c.Day)
+	}
+
+	log.Println("opens at", day.OpenHour, "and closes at", day.CloseHour)
 
 	channelID, err := store.GetChannelID()
 	if err != nil {
@@ -33,25 +42,20 @@ func (c *ScheduleCmd) Run(store *store.Store) error {
 	content := strings.TrimSpace(buf.String())
 
 	var embeds []*discordgo.MessageEmbed
-	if c.Workout != "" {
-		workout, err := store.GetWorkout(c.Workout)
-		if err != nil {
-			log.Println("get workout:", err)
-		} else {
-			fields := make([]*discordgo.MessageEmbedField, 0, len(workout.Routines))
-			for _, routine := range workout.Routines {
-				fields = append(fields, &discordgo.MessageEmbedField{
-					Name:  routine.Title,
-					Value: routine.Description,
-				})
-			}
-			embeds = []*discordgo.MessageEmbed{{
-				Title:       workout.Title,
-				Description: workout.Description,
-				Color:       workout.Color,
-				Fields:      fields,
-			}}
+	if day.Workout != nil {
+		fields := make([]*discordgo.MessageEmbedField, 0, len(day.Workout.Routines))
+		for _, routine := range day.Workout.Routines {
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:  routine.Title,
+				Value: routine.Description,
+			})
 		}
+		embeds = []*discordgo.MessageEmbed{{
+			Title:       day.Workout.Title,
+			Description: day.Workout.Description,
+			Color:       day.Workout.Color,
+			Fields:      fields,
+		}}
 	}
 
 	message, err := bot.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{

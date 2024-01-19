@@ -76,11 +76,11 @@ func (*DoctorCmd) Run(store *store.Store) error {
 		}
 	}
 
-	workoutNames, err := store.GetWorkoutNames()
+	dayNames, err := store.GetDayNames()
 	if err != nil {
-		fmt.Println("Could not load workout names:", err)
+		fmt.Println("Could not load day names:", err)
 	} else {
-		fmt.Println("Workout names:", workoutNames)
+		fmt.Println("Day names:", dayNames)
 	}
 
 	return nil
