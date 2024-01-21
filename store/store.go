@@ -29,44 +29,54 @@ func Open(dataSourceName string) (*Store, error) {
 
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		db.Close()
-		return nil, err
+		return nil, errors.Join(err, db.Close())
 	}
 
 	row := db.QueryRow("PRAGMA application_id;")
 	var dbAppId uint32
 	err = row.Scan(&dbAppId)
 	if err != nil {
-		db.Close()
-		return nil, err
+		return nil, errors.Join(err, db.Close())
 	}
 
 	if dbAppId != applicationID && dbAppId != 0 {
-		db.Close()
-		return nil, fmt.Errorf("application_id mismatch: expected %d, but was %d", applicationID, dbAppId)
+		return nil, errors.Join(
+			fmt.Errorf("application_id mismatch: expected %d, but was %d", applicationID, dbAppId),
+			db.Close(),
+		)
 	}
 
 	row = db.QueryRow("PRAGMA user_version;")
 	var dbUserVer uint32
 	err = row.Scan(&dbUserVer)
 	if err != nil {
-		db.Close()
-		return nil, err
+		return nil, errors.Join(err, db.Close())
 	}
 
 	if dbUserVer > userVersion {
-		db.Close()
-		return nil, fmt.Errorf("user_version is too high: expected %d or lower, but was %d", userVersion, dbUserVer)
+		return nil, errors.Join(
+			fmt.Errorf("user_version is too high: expected %d or lower, but was %d", userVersion, dbUserVer),
+			db.Close(),
+		)
 	} else if dbAppId == 0 && dbUserVer != 0 {
-		db.Close()
-		return nil, fmt.Errorf("application id was zero but user version was nonzero (%d)", userVersion)
+		return nil, errors.Join(
+			fmt.Errorf("application id was zero but user version was nonzero (%d)", userVersion),
+			db.Close(),
+		)
 	}
 
 	for dbUserVer < userVersion {
-		_, err := db.Exec(queries.GetMigration(dbUserVer + 1))
+		tx, err := db.Begin()
 		if err != nil {
-			db.Close()
-			return nil, err
+			return nil, errors.Join(err, db.Close())
+		}
+		_, err = tx.Exec(queries.GetMigration(dbUserVer + 1))
+		if err != nil {
+			return nil, errors.Join(err, tx.Rollback(), db.Close())
+		}
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Join(err, db.Close())
 		}
 		dbUserVer++
 	}

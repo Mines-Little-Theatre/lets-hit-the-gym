@@ -1,5 +1,3 @@
-BEGIN;
-
 PRAGMA user_version = 2;
 
 CREATE TABLE workouts (
@@ -21,5 +19,3 @@ CREATE TABLE workout_routines (
   ordinal INTEGER NOT NULL
 );
 CREATE INDEX workout_routine_idx ON workout_routines(workout_name, ordinal, routine_id);
-
-COMMIT;

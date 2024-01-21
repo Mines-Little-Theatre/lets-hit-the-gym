@@ -43,10 +43,12 @@ func main() {
 	k.FatalIfErrorf(err)
 }
 
+var errTokenNotFound = errors.New("token now found")
+
 func connectBot(store *store.Store) (*discordgo.Session, error) {
 	token, err := store.GetToken()
 	if err == sql.ErrNoRows {
-		return nil, errors.New("token not found")
+		return nil, errTokenNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("get token: %w", err)
 	}

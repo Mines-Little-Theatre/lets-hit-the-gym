@@ -1,5 +1,3 @@
-BEGIN;
-
 PRAGMA user_version = 4;
 
 CREATE TABLE arrivals (
@@ -8,5 +6,3 @@ CREATE TABLE arrivals (
 );
 CREATE UNIQUE INDEX arrivals_idx ON arrivals(hour, user_id);
 CREATE INDEX arrivals_user_id_idx ON arrivals(user_id);
-
-COMMIT;

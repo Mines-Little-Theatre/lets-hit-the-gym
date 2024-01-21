@@ -1,5 +1,3 @@
-BEGIN;
-
 PRAGMA user_version = 3;
 
 CREATE TEMPORARY TABLE workout_routines_old AS SELECT * FROM workout_routines;
@@ -50,5 +48,3 @@ CREATE TABLE days (
   close_hour INTEGER NOT NULL,
   workout_id INTEGER REFERENCES workouts(id)
 ) WITHOUT ROWID;
-
-COMMIT;

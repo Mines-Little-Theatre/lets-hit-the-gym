@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store"
@@ -12,7 +13,10 @@ type DoctorCmd struct{}
 
 func (*DoctorCmd) Run(store *store.Store) error {
 	bot, err := connectBot(store)
-	if err != nil {
+	if errors.Is(err, errTokenNotFound) {
+		fmt.Println("Token not set!")
+		return nil
+	} else if err != nil {
 		return err
 	}
 
