@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Mines-Little-Theatre/lets-hit-the-gym/store/queries"
@@ -11,7 +12,7 @@ import (
 
 const (
 	applicationID uint32 = 0x4c696654
-	userVersion   uint32 = 3
+	userVersion   uint32 = 4
 )
 
 // much of this is copied from the lean bot, maybe I should make a library
@@ -93,8 +94,26 @@ func (s *Store) GetLastScheduleMessageID() (string, error) {
 	return getKV[string](s.db, "last_schedule_message_id")
 }
 
-func (s *Store) UpdateLastScheduleMessageID(id string) error {
-	return putKV(s.db, "last_schedule_message_id", id)
+func (s *Store) GetSignupEmbedIndex() (int, error) {
+	return getKV[int](s.db, "signup_embed_index")
+}
+
+func (s *Store) UpdateLastScheduleMessage(id string, signupEmbedIndex int) error {
+	return transact(s.db, func(tx *sql.Tx) error {
+		err := putKV(tx, "last_schedule_message_id", id)
+		if err != nil {
+			return err
+		}
+		err = putKV(tx, "signup_embed_index", signupEmbedIndex)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(queries.Get("clear_arrivals"))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (s *Store) GetDay(name string) (*Day, error) {
@@ -132,7 +151,7 @@ func (s *Store) GetDay(name string) (*Day, error) {
 				var routine Routine
 				err := rows.Scan(new(int), new(int), new(string), new(string), new(int), &routine.Title, &routine.Description)
 				if err != nil {
-					return nil, err
+					return nil, errors.Join(err, rows.Close())
 				}
 				day.Workout.Routines = append(day.Workout.Routines, routine)
 			}
@@ -161,7 +180,7 @@ func (s *Store) GetDayNames() ([]string, error) {
 		var s string
 		err := rows.Scan(&s)
 		if err != nil {
-			return nil, err
+			return nil, errors.Join(err, rows.Close())
 		}
 		result = append(result, s)
 	}
@@ -169,6 +188,74 @@ func (s *Store) GetDayNames() ([]string, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *Store) GetAllArrivals() ([]HourArrivals, error) {
+	result := make([]HourArrivals, 0)
+	rows, err := s.db.Query(queries.Get("get_arrivals"))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var (
+			hour   int
+			userID string
+		)
+		err = rows.Scan(&hour, &userID)
+		if err != nil {
+			return nil, errors.Join(err, rows.Close())
+		}
+		if len(result) == 0 || hour != result[len(result)-1].Hour {
+			result = append(result, HourArrivals{Hour: hour})
+		}
+		users := &result[len(result)-1].ArrivingUsers
+		*users = append(*users, userID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *Store) GetArrivingUsers(hour int) ([]string, error) {
+	result := make([]string, 0)
+	rows, err := s.db.Query(queries.Get("get_hour_arrivals"), hour)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var id string
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, errors.Join(err, rows.Close())
+		}
+		result = append(result, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *Store) SetUserArrivals(id string, hours []int) error {
+	return transact(s.db, func(tx *sql.Tx) error {
+		_, err := tx.Exec(queries.Get("remove_user_arrivals"), id)
+		if err != nil {
+			return err
+		}
+		for _, hour := range hours {
+			_, err := tx.Exec(queries.Get("add_arrival"), id, hour)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (s *Store) ClearArrivals() error {
+	_, err := s.db.Exec(queries.Get("clear_arrivals"))
+	return err
 }
 
 func (s *Store) Close() error {

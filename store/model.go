@@ -17,3 +17,8 @@ type Routine struct {
 	Title       string
 	Description string
 }
+
+type HourArrivals struct {
+	Hour          int
+	ArrivingUsers []string
+}
