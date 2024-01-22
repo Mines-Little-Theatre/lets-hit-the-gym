@@ -1,13 +1,12 @@
 {
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended-type-checked",
-    "prettier"
-  ],
-  "plugins": ["@typescript-eslint"],
-  "parser": "@typescript-eslint/parser",
+  "extends": ["eslint:recommended", "prettier"],
+  "env": {
+    "node": true,
+    "es2022": true
+  },
   "parserOptions": {
-    "project": "./tsconfig.json"
+    "ecmaVersion": 2022,
+    "sourceType": "module"
   },
   "root": true
 }
