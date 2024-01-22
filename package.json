@@ -1,0 +1,27 @@
+{
+  "name": "lets-hit-the-gym",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
+  },
+  "dependencies": {
+    "discord-interactions": "^3.4.0",
+    "luxon": "^3.4.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@tsconfig/strictest": "^2.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.4",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.23.0"
+  }
+}
