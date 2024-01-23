@@ -24,19 +24,19 @@ func (c *RemindCmd) Run(store *store.Store) error {
 		return fmt.Errorf("get channel ID: %w", err)
 	}
 
-	userMentions, err := store.GetArrivingUsers(c.Hour)
+	userIDs, err := store.GetArrivingUsers(c.Hour)
 	if err != nil {
 		return fmt.Errorf("get arriving users: %w", err)
 	}
 
-	if len(userMentions) > 0 {
+	if len(userIDs) > 0 {
 		lastScheduleMessageID, err := store.GetLastScheduleMessageID()
 		if err != nil {
 			return fmt.Errorf("get last schedule message ID: %w", err)
 		}
 
 		var buf bytes.Buffer
-		err = templates.ExecuteTemplate(&buf, "remind-message.txt", userMentions)
+		err = templates.ExecuteTemplate(&buf, "remind-message.txt", userIDs)
 		if err != nil {
 			return fmt.Errorf("execute template: %w", err)
 		}
