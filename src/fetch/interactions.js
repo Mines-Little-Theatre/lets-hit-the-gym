@@ -5,7 +5,7 @@ import {
   verifyKey,
 } from "discord-interactions";
 import { error } from "itty-router";
-import { getScheduleMessageID } from "../../queries.js";
+import { getScheduleMessageID } from "../queries.js";
 
 export async function interactions(request, env) {
   const signature = request.headers.get("x-signature-ed25519");

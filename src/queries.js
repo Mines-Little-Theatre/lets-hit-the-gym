@@ -1,6 +1,25 @@
 const queries = {
+  clear_arrivals: `
+    DELETE FROM arrivals;
+  `,
   get_kv: `
-    SELECT value FROM kv_store WHERE key = ?1
+    SELECT value FROM kv_store WHERE key = ?1;
+  `,
+  get_weekday: `
+    SELECT post_hour, open_hour, close_hour, workout_id
+    FROM weekdays WHERE id = ?1;
+  `,
+  get_workout: `
+    SELECT w.title AS workout_title,
+      w.description AS workout_description,
+      w.color AS workout_color,
+      r.title AS routine_title,
+      r.description AS routine_description
+    FROM workouts AS w
+      LEFT JOIN workout_routines AS x ON w.id = x.workout_id
+      LEFT JOIN routines AS r ON x.routine_id = r.id
+    WHERE w.id = ?1
+    ORDER BY x.ordinal;
   `,
   put_kv: `
     INSERT INTO kv_store (key, value) VALUES (?1, ?2)
@@ -39,4 +58,37 @@ export async function getScheduleMessageID(db) {
 
 export async function updateScheduleMessageID(db, message_id) {
   await putKV(db, "schedule_message_id", message_id);
+}
+
+export async function clearArrivals(db) {
+  const stmt = prepareStatement(db, "clear_arrivals");
+  await stmt.run();
+}
+
+export async function getWeekday(db, id) {
+  const stmt = prepareStatement(db, "get_weekday");
+  return stmt.bind(id).first();
+}
+
+export async function getWorkout(db, id) {
+  const stmt = prepareStatement(db, "get_workout");
+  const { results } = await stmt.bind(id).all();
+  if (results.length <= 0) {
+    return null;
+  }
+  const workout = {
+    title: results[0].workout_title,
+    description: results[0].workout_description,
+    color: results[0].workout_color,
+    routines: [],
+  };
+  if (results[0].routine_title !== null) {
+    for (const row of results) {
+      workout.routines.push({
+        title: row.routine_title,
+        description: row.routine_description,
+      });
+    }
+  }
+  return workout;
 }

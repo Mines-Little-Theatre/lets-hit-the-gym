@@ -23,7 +23,7 @@ CREATE TABLE workout_routines (
 ) STRICT;
 CREATE INDEX workout_routine_idx ON workout_routines(workout_id, ordinal, routine_id);
 
-CREATE TABLE days (
+CREATE TABLE weekdays (
   id INTEGER PRIMARY KEY,
   post_hour INTEGER NOT NULL,
   open_hour INTEGER NOT NULL,

@@ -1,5 +1,5 @@
 import { error, json, Router } from "itty-router";
-import { interactions } from "./interactions/index.js";
+import { interactions } from "./interactions.js";
 
 const router = Router();
 
