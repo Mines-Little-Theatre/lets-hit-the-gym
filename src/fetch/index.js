@@ -9,5 +9,8 @@ export async function fetch(...args) {
   return router
     .handle(...args)
     .then(json)
-    .catch(error);
+    .catch((e) => {
+      console.error(e);
+      return error(e);
+    });
 }

@@ -5,6 +5,7 @@ import {
   verifyKey,
 } from "discord-interactions";
 import { error } from "itty-router";
+import { getScheduleMessageID } from "../../queries.js";
 
 export async function interactions(request, env) {
   const signature = request.headers.get("x-signature-ed25519");
@@ -15,7 +16,7 @@ export async function interactions(request, env) {
     timestamp === null ||
     !verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY)
   ) {
-    return error(401, "bad request signature");
+    return error(401);
   }
 
   const interaction = JSON.parse(new TextDecoder("utf-8").decode(body));
@@ -24,13 +25,18 @@ export async function interactions(request, env) {
       type: InteractionResponseType.PONG,
     };
   } else if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        content: interaction.data.custom_id,
-        flags: InteractionResponseFlags.EPHEMERAL,
-      },
-    };
+    const scheduleMessageID = await getScheduleMessageID(env.DB);
+    if (interaction.message.id !== scheduleMessageID) {
+      return {
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          content: `You can’t change your schedule in the past! Try using today’s signup: https://discord.com/channels/${interaction.guild_id}/${env.CHANNEL_ID}/${scheduleMessageID}`,
+          flags: InteractionResponseFlags.EPHEMERAL,
+        },
+      };
+    } else {
+      return error(501, "not implemented");
+    }
   } else {
     return error(400, "unexpected interaction type");
   }
