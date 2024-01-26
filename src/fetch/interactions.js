@@ -5,7 +5,12 @@ import {
   verifyKey,
 } from "discord-interactions";
 import { error } from "itty-router";
-import { getScheduleMessageID, setUserArrivals } from "../queries.js";
+import {
+  getAllArrivals,
+  getScheduleMessageID,
+  setUserArrivals,
+} from "../queries.js";
+import { hourNames } from "../constants.js";
 
 export async function interactions(request, env) {
   const signature = request.headers.get("x-signature-ed25519");
@@ -70,5 +75,33 @@ async function removeSignup(env, interaction) {
 }
 
 async function modifySignupEmbed(env, interaction) {
-  
+  const arrivals = await getAllArrivals(env.DB);
+  const signupEmbed = {
+    title: "Signups",
+    color: 0x5865f2,
+  };
+  if (arrivals.length === 0) {
+    signupEmbed.description = "No one has signed up yet!";
+  } else {
+    signupEmbed.fields = arrivals.map((hour) => ({
+      name: hourNames[hour.hour],
+      value: "<@" + hour.users.join(">\n<@") + ">",
+      inline: true,
+    }));
+  }
+  const embeds = interaction.message.embeds;
+  const signupEmbedIndex = embeds.findIndex((e) => e.title === "Signups");
+  if (signupEmbedIndex === -1) {
+    embeds.push(signupEmbed);
+  } else {
+    embeds[signupEmbedIndex] = signupEmbed;
+  }
+  return {
+    type: InteractionResponseType.UPDATE_MESSAGE,
+    data: {
+      content: interaction.message.content,
+      embeds,
+      components: interaction.message.components,
+    },
+  };
 }

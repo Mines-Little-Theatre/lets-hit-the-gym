@@ -73,7 +73,7 @@ export async function getAllArrivals(db) {
   const result = [];
   let currentHour = null;
   const stmt = prepareStatement(db, "get_arrivals");
-  for (const row of await stmt.all()) {
+  for (const row of (await stmt.all()).results) {
     if (!currentHour || currentHour.hour !== row.hour) {
       result.push((currentHour = { hour: row.hour, users: [] }));
     }
