@@ -109,8 +109,9 @@ func (c *GatewayCmd) Run(store *store.Store) error {
 					signupEmbed.Fields = nil
 					for _, hour := range arrivals {
 						signupEmbed.Fields = append(signupEmbed.Fields, &discordgo.MessageEmbedField{
-							Name:  hourNames[hour.Hour],
-							Value: "<@" + strings.Join(hour.ArrivingUsers, ">\n<@") + ">",
+							Name:   hourNames[hour.Hour],
+							Value:  "<@" + strings.Join(hour.ArrivingUsers, ">\n<@") + ">",
+							Inline: true,
 						})
 					}
 				}
