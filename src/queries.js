@@ -1,6 +1,15 @@
 const queries = {
+  add_arrival: `
+    INSERT INTO arrivals (hour, user_id) VALUES (?1, ?2);
+  `,
   clear_arrivals: `
     DELETE FROM arrivals;
+  `,
+  clear_user_arrivals: `
+    DELETE FROM arrivals WHERE user_id = ?1;
+  `,
+  get_arrivals: `
+    SELECT hour, user_id FROM arrivals ORDER BY hour;
   `,
   get_kv: `
     SELECT value FROM kv_store WHERE key = ?1;
@@ -56,8 +65,32 @@ export async function getScheduleMessageID(db) {
   return getKV(db, "schedule_message_id");
 }
 
-export async function updateScheduleMessageID(db, message_id) {
-  await putKV(db, "schedule_message_id", message_id);
+export async function updateScheduleMessageID(db, messageID) {
+  await putKV(db, "schedule_message_id", messageID);
+}
+
+export async function getAllArrivals(db) {
+  const result = [];
+  let currentHour = null;
+  const stmt = prepareStatement(db, "get_arrivals");
+  for (const row of await stmt.all()) {
+    if (!currentHour || currentHour.hour !== row.hour) {
+      result.push((currentHour = { hour: row.hour, users: [] }));
+    }
+    currentHour.users.push(row.user_id);
+  }
+  return result;
+}
+
+export async function setUserArrivals(db, userID, hours) {
+  const clearStmt = prepareStatement(db, "clear_user_arrivals");
+  await clearStmt.bind(userID).run();
+  if (hours && hours.length > 0) {
+    const addStmt = prepareStatement(db, "add_arrival");
+    for (const hour of hours) {
+      await addStmt.bind(hour, userID).run();
+    }
+  }
 }
 
 export async function clearArrivals(db) {

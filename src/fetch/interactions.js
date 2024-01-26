@@ -5,7 +5,7 @@ import {
   verifyKey,
 } from "discord-interactions";
 import { error } from "itty-router";
-import { getScheduleMessageID } from "../queries.js";
+import { getScheduleMessageID, setUserArrivals } from "../queries.js";
 
 export async function interactions(request, env) {
   const signature = request.headers.get("x-signature-ed25519");
@@ -35,9 +35,40 @@ export async function interactions(request, env) {
         },
       };
     } else {
-      return error(501, "not implemented");
+      switch (interaction.data.custom_id) {
+        case "signup_selection":
+          return signupSelection(env, interaction);
+        case "remove_signup":
+          return removeSignup(env, interaction);
+        default:
+          return {
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: `Looks like you somehow interacted with an invalid component \`${interaction.data.custom_id}\`.`,
+              flags: InteractionResponseFlags.EPHEMERAL,
+            },
+          };
+      }
     }
   } else {
     return error(400, "unexpected interaction type");
   }
+}
+
+async function signupSelection(env, interaction) {
+  await setUserArrivals(
+    env.DB,
+    interaction.member.user.id,
+    interaction.data.values.map((v) => Number.parseInt(v)),
+  );
+  return modifySignupEmbed(env, interaction);
+}
+
+async function removeSignup(env, interaction) {
+  await setUserArrivals(env.DB, interaction.member.user.id, null);
+  return modifySignupEmbed(env, interaction);
+}
+
+async function modifySignupEmbed(env, interaction) {
+  
 }
