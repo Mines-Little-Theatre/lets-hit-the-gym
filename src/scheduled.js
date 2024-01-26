@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { hourNames } from "./constants.js";
 import {
   clearArrivals,
+  getHourArrivals,
   getWeekday,
   getWorkout,
   updateScheduleMessageID,
@@ -18,7 +19,7 @@ export async function scheduled(event, env) {
   if (hour === weekdayInfo.post_hour) {
     await postSchedule(env, weekdayInfo);
   } else if (weekdayInfo.open_hour <= hour && hour < weekdayInfo.close_hour) {
-    await postReminder(env);
+    await postReminder(env, hour);
   }
 }
 
@@ -95,4 +96,22 @@ async function postSchedule(env, weekdayInfo) {
   await updateScheduleMessageID(env.DB, message.id);
 }
 
-async function postReminder() {}
+async function postReminder(env, hour) {
+  const arrivingUsers = await getHourArrivals(env.DB, hour);
+  if (arrivingUsers.length > 0) {
+    const messageSend = {
+      content:
+        "Looks like we’ve got some people headed for the gym!\n- <@" +
+        arrivingUsers.join(">\n- <@") +
+        ">",
+    };
+    await fetch(`${DISCORD_API}/channels/${env.CHANNEL_ID}/messages`, {
+      method: "POST",
+      body: JSON.stringify(messageSend),
+      headers: {
+        Authorization: env.DISCORD_TOKEN,
+        "Content-Type": "application/json",
+      },
+    });
+  }
+}

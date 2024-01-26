@@ -11,6 +11,9 @@ const queries = {
   get_arrivals: `
     SELECT hour, user_id FROM arrivals ORDER BY hour;
   `,
+  get_hour_arrivals: `
+    SELECT user_id FROM arrivals WHERE hour = ?1;
+  `,
   get_kv: `
     SELECT value FROM kv_store WHERE key = ?1;
   `,
@@ -80,6 +83,11 @@ export async function getAllArrivals(db) {
     currentHour.users.push(row.user_id);
   }
   return result;
+}
+
+export async function getHourArrivals(db, hour) {
+  const stmt = prepareStatement(db, "get_hour_arrivals");
+  return (await stmt.bind(hour).all()).results.map((row) => row.user_id);
 }
 
 export async function setUserArrivals(db, userID, hours) {
