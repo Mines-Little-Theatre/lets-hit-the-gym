@@ -1,0 +1,21 @@
+name: Sanity-check code
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts
+      - run: npm ci
+      - run: npm run check:format
+      - run: npm run check:lint
