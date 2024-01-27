@@ -104,6 +104,12 @@ async function postReminder(env, hour) {
         "Looks like we’ve got some people headed for the gym!\n- <@" +
         arrivingUsers.join(">\n- <@") +
         ">",
+      allowed_mentions: {
+        replied_user: false,
+      },
+      message_reference: {
+        message_id: env.interaction.message.id,
+      },
     };
     await fetch(`${DISCORD_API}/channels/${env.CHANNEL_ID}/messages`, {
       method: "POST",

@@ -1,40 +1,20 @@
 # Let's hit the gym!
 
-A Discord bot that helps coordinate the Mines Lifting Thespians.
+A Discord bot that helps coordinate the Mines Lifting Thespians. Runs on Cloudflare Workers.
 
-## Installation and Usage
-
-Set the `GYM_BOT_DB` environment variable to a path where the application can create an SQLite database.
-
-Configure the application:
+## Deployment
 
 ```sh
-go run . config --token 'Bot ...' --channel-id ...
+npm i # install dependencies, including "wrangler" tool
+npx wrangler deploy # deploy to Cloudflare Workers
+npx wrangler d1 migrations apply # create tables in the database
+npx wrangler d1 execute prod-gym-bot --file data/src_hours.sql # populate the database with weekday info
+
+# fill in with your Discord application's info
+npx wrangler secret put DISCORD_APPLICATION_ID
+npx wrangler secret put DISCORD_PUBLIC_KEY
+npx wrangler secret put DISCORD_TOKEN # should be of the form "Bot ..."
+npx wrangler secret put CHANNEL_ID # the channel to post in
 ```
 
-Check for any issues:
-
-```sh
-go run . doctor
-```
-
-Then set it up to run on a schedule using cron!
-
-### Example crontab
-
-```
-0 7 * * * <executable> schedule
-
-50 8 * * * <executable> remind 9️⃣
-50 9 * * * <executable> remind 🔟
-50 10 * * * <executable> remind 🇪
-50 11 * * * <executable> remind 🇳
-50 12 * * * <executable> remind 1️⃣
-50 13 * * * <executable> remind 2️⃣
-50 14 * * * <executable> remind 3️⃣
-50 15 * * * <executable> remind 4️⃣
-50 16 * * * <executable> remind 5️⃣
-50 17 * * * <executable> remind 6️⃣
-50 18 * * * <executable> remind 7️⃣
-50 19 * * * <executable> remind 8️⃣
-```
+Make sure the bot user is added to the server and has the "View Channel," "Send Messages," "Embed Links," and "Read Message History" permissions in the channel!
