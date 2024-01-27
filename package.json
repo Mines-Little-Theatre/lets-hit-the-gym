@@ -1,0 +1,25 @@
+{
+  "name": "lets-hit-the-gym",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check:format": "prettier . --check",
+    "check:lint": "eslint .",
+    "format": "prettier . --write",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
+  },
+  "dependencies": {
+    "discord-interactions": "^3.4.0",
+    "itty-router": "^4.0.27",
+    "luxon": "^3.4.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.4",
+    "wrangler": "^3.25.0"
+  }
+}
