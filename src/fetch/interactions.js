@@ -5,12 +5,12 @@ import {
   verifyKey,
 } from "discord-interactions";
 import { error } from "itty-router";
+import { hourNames } from "../constants.js";
 import {
   getAllArrivals,
   getScheduleMessageID,
   setUserArrivals,
 } from "../queries.js";
-import { hourNames } from "../constants.js";
 
 export async function interactions(request, env) {
   const signature = request.headers.get("x-signature-ed25519");
