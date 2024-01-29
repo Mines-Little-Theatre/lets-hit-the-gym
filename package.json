@@ -12,14 +12,21 @@
     "start": "wrangler dev"
   },
   "dependencies": {
+    "discord-api-types": "^0.37.67",
     "discord-interactions": "^3.4.0",
     "itty-router": "^4.0.27",
     "luxon": "^3.4.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@tsconfig/strictest": "^2.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "@typescript-eslint/parser": "^6.20.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.4",
+    "prettier-plugin-organize-imports": "^3.2.4",
+    "typescript": "^5.3.3",
     "wrangler": "^3.25.0"
   }
 }
