@@ -37,11 +37,18 @@ const queries = {
     INSERT INTO kv_store (key, value) VALUES (?1, ?2)
       ON CONFLICT (key) DO UPDATE SET value = excluded.value;
   `,
+} as const;
+
+type PreparedQueries = {
+  -readonly [key in keyof typeof queries]?: D1PreparedStatement;
 };
 
-const preparedStatements = new WeakMap();
+const preparedStatements = new WeakMap<D1Database, PreparedQueries>();
 
-function prepareStatement(db, name) {
+function prepareStatement(
+  db: D1Database,
+  name: keyof typeof queries,
+): D1PreparedStatement {
   let dbPrepared = preparedStatements.get(db);
   if (!dbPrepared) {
     preparedStatements.set(db, (dbPrepared = {}));
@@ -54,43 +61,60 @@ function prepareStatement(db, name) {
   return stmt;
 }
 
-async function getKV(db, key) {
+async function getKV(db: D1Database, key: string): Promise<unknown> {
   const stmt = prepareStatement(db, "get_kv");
   return stmt.bind(key).first("value");
 }
 
-async function putKV(db, key, value) {
+async function putKV(db: D1Database, key: string, value: unknown) {
   const stmt = prepareStatement(db, "put_kv");
   await stmt.bind(key, value).run();
 }
 
-export async function getScheduleMessageID(db) {
-  return getKV(db, "schedule_message_id");
+export async function getScheduleMessageID(db: D1Database): Promise<string> {
+  return getKV(db, "schedule_message_id") as Promise<string>;
 }
 
-export async function updateScheduleMessageID(db, messageID) {
+export async function updateScheduleMessageID(
+  db: D1Database,
+  messageID: string,
+) {
   await putKV(db, "schedule_message_id", messageID);
 }
 
-export async function getAllArrivals(db) {
+export interface HourArrivals {
+  hour: number;
+  users: string[];
+}
+
+export async function getAllArrivals(db: D1Database): Promise<HourArrivals[]> {
   const result = [];
-  let currentHour = null;
+  let currentHour: HourArrivals | undefined;
   const stmt = prepareStatement(db, "get_arrivals");
   for (const row of (await stmt.all()).results) {
-    if (!currentHour || currentHour.hour !== row.hour) {
-      result.push((currentHour = { hour: row.hour, users: [] }));
+    if (!currentHour || currentHour.hour !== row["hour"]) {
+      result.push((currentHour = { hour: row["hour"] as number, users: [] }));
     }
-    currentHour.users.push(row.user_id);
+    currentHour.users.push(row["user_id"] as string);
   }
   return result;
 }
 
-export async function getHourArrivals(db, hour) {
+export async function getHourArrivals(
+  db: D1Database,
+  hour: number,
+): Promise<string[]> {
   const stmt = prepareStatement(db, "get_hour_arrivals");
-  return (await stmt.bind(hour).all()).results.map((row) => row.user_id);
+  return (await stmt.bind(hour).all()).results.map(
+    (row) => row["user_id"] as string,
+  );
 }
 
-export async function setUserArrivals(db, userID, hours) {
+export async function setUserArrivals(
+  db: D1Database,
+  userID: string,
+  hours: readonly number[] | null,
+) {
   const clearStmt = prepareStatement(db, "clear_user_arrivals");
   await clearStmt.bind(userID).run();
   if (hours && hours.length > 0) {
@@ -101,35 +125,62 @@ export async function setUserArrivals(db, userID, hours) {
   }
 }
 
-export async function clearArrivals(db) {
+export async function clearArrivals(db: D1Database) {
   const stmt = prepareStatement(db, "clear_arrivals");
   await stmt.run();
 }
 
-export async function getWeekday(db, id) {
+export interface Weekday {
+  post_hour: number;
+  open_hour: number;
+  close_hour: number;
+  workout_id: number | null;
+}
+
+export async function getWeekday(
+  db: D1Database,
+  id: number,
+): Promise<Weekday | null> {
   const stmt = prepareStatement(db, "get_weekday");
   return stmt.bind(id).first();
 }
 
-export async function getWorkout(db, id) {
+export interface Workout {
+  title: string;
+  description: string;
+  color: number;
+  routines: {
+    title: string;
+    description: string;
+  }[];
+}
+
+export async function getWorkout(
+  db: D1Database,
+  id: number,
+): Promise<Workout | null> {
   const stmt = prepareStatement(db, "get_workout");
   const { results } = await stmt.bind(id).all();
   if (results.length <= 0) {
     return null;
   }
-  const workout = {
-    title: results[0].workout_title,
-    description: results[0].workout_description,
-    color: results[0].workout_color,
+  const workout: Workout = {
+    title: (results[0]?.["workout_title"] as string) ?? "",
+    description: (results[0]?.["workout_description"] as string) ?? "",
+    color: (results[0]?.["workout_color"] as number) ?? 0,
     routines: [],
   };
-  if (results[0].routine_title !== null) {
+  if (!isNullOrUndefined(results[0]?.["routine_title"])) {
     for (const row of results) {
       workout.routines.push({
-        title: row.routine_title,
-        description: row.routine_description,
+        title: row["routine_title"] as string,
+        description: row["routine_description"] as string,
       });
     }
   }
   return workout;
+}
+
+function isNullOrUndefined(v: unknown): v is null | undefined {
+  return v === null || v === undefined;
 }

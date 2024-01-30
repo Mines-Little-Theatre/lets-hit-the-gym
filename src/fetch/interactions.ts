@@ -1,18 +1,27 @@
 import {
-  InteractionResponseFlags,
+  APIEmbed,
+  APIInteraction,
+  APIInteractionResponse,
+  APIMessageComponentInteraction,
+  ComponentType,
   InteractionResponseType,
   InteractionType,
-  verifyKey,
-} from "discord-interactions";
+  MessageFlags,
+} from "discord-api-types/v10";
+import { verifyKey } from "discord-interactions";
 import { error } from "itty-router";
 import { hourNames } from "../constants.js";
+import { Env } from "../env.js";
 import {
   getAllArrivals,
   getScheduleMessageID,
   setUserArrivals,
 } from "../queries.js";
 
-export async function interactions(request, env) {
+export async function interactions(
+  request: Request,
+  env: Env,
+): Promise<Response | APIInteractionResponse> {
   const signature = request.headers.get("x-signature-ed25519");
   const timestamp = request.headers.get("x-signature-timestamp");
   const body = await request.arrayBuffer();
@@ -24,19 +33,21 @@ export async function interactions(request, env) {
     return error(401);
   }
 
-  const interaction = JSON.parse(new TextDecoder("utf-8").decode(body));
-  if (interaction.type === InteractionType.PING) {
+  const interaction: APIInteraction = JSON.parse(
+    new TextDecoder("utf-8").decode(body),
+  ) as APIInteraction;
+  if (interaction.type === InteractionType.Ping) {
     return {
-      type: InteractionResponseType.PONG,
+      type: InteractionResponseType.Pong,
     };
-  } else if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
+  } else if (interaction.type === InteractionType.MessageComponent) {
     const scheduleMessageID = await getScheduleMessageID(env.DB);
     if (interaction.message.id !== scheduleMessageID) {
       return {
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        type: InteractionResponseType.ChannelMessageWithSource,
         data: {
           content: `You can’t change your schedule in the past! Try using today’s signup: https://discord.com/channels/${interaction.guild_id}/${env.CHANNEL_ID}/${scheduleMessageID}`,
-          flags: InteractionResponseFlags.EPHEMERAL,
+          flags: MessageFlags.Ephemeral,
         },
       };
     } else {
@@ -47,10 +58,10 @@ export async function interactions(request, env) {
           return removeSignup(env, interaction);
         default:
           return {
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            type: InteractionResponseType.ChannelMessageWithSource,
             data: {
               content: `Looks like you somehow interacted with an invalid component \`${interaction.data.custom_id}\`.`,
-              flags: InteractionResponseFlags.EPHEMERAL,
+              flags: MessageFlags.Ephemeral,
             },
           };
       }
@@ -60,23 +71,36 @@ export async function interactions(request, env) {
   }
 }
 
-async function signupSelection(env, interaction) {
-  await setUserArrivals(
-    env.DB,
-    interaction.member.user.id,
-    interaction.data.values.map((v) => Number.parseInt(v)),
-  );
+async function signupSelection(
+  env: Env,
+  interaction: APIMessageComponentInteraction,
+): Promise<Response | APIInteractionResponse> {
+  if (interaction.data.component_type === ComponentType.StringSelect) {
+    await setUserArrivals(
+      env.DB,
+      interaction.member!.user.id,
+      interaction.data.values.map((v) => Number.parseInt(v)),
+    );
+    return modifySignupEmbed(env, interaction);
+  } else {
+    return error(400, "unexpected component type");
+  }
+}
+
+async function removeSignup(
+  env: Env,
+  interaction: APIMessageComponentInteraction,
+): Promise<Response | APIInteractionResponse> {
+  await setUserArrivals(env.DB, interaction.member!.user.id, null);
   return modifySignupEmbed(env, interaction);
 }
 
-async function removeSignup(env, interaction) {
-  await setUserArrivals(env.DB, interaction.member.user.id, null);
-  return modifySignupEmbed(env, interaction);
-}
-
-async function modifySignupEmbed(env, interaction) {
+async function modifySignupEmbed(
+  env: Env,
+  interaction: APIMessageComponentInteraction,
+): Promise<Response | APIInteractionResponse> {
   const arrivals = await getAllArrivals(env.DB);
-  const signupEmbed = {
+  const signupEmbed: APIEmbed = {
     title: "Signups",
     color: 0x5865f2,
   };
@@ -84,7 +108,7 @@ async function modifySignupEmbed(env, interaction) {
     signupEmbed.description = "No one has signed up yet!";
   } else {
     signupEmbed.fields = arrivals.map((hour) => ({
-      name: hourNames[hour.hour],
+      name: hourNames[hour.hour] ?? "undefined",
       value: "<@" + hour.users.join(">\n<@") + ">",
       inline: true,
     }));
@@ -97,7 +121,7 @@ async function modifySignupEmbed(env, interaction) {
     embeds[signupEmbedIndex] = signupEmbed;
   }
   return {
-    type: InteractionResponseType.UPDATE_MESSAGE,
+    type: InteractionResponseType.UpdateMessage,
     data: {
       content: interaction.message.content,
       embeds,
