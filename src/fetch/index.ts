@@ -5,6 +5,7 @@ import { interactions } from "./interactions.js";
 const router = Router<Request, [Env, ExecutionContext]>();
 
 router.post("/interactions", interactions);
+router.all("*", () => error(404));
 
 export async function fetch(request: Request, env: Env, ctx: ExecutionContext) {
   return router
