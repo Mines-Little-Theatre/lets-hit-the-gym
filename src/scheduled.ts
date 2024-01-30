@@ -11,6 +11,7 @@ import {
   Weekday,
   clearArrivals,
   getHourArrivals,
+  getScheduleMessageID,
   getWeekday,
   getWorkout,
   updateScheduleMessageID,
@@ -110,11 +111,18 @@ async function postSchedule(env: Env, weekdayInfo: Weekday) {
 async function postReminder(env: Env, hour: number) {
   const arrivingUsers = await getHourArrivals(env.DB, hour);
   if (arrivingUsers.length > 0) {
+    const scheduleMessageID = await getScheduleMessageID(env.DB);
     const messageSend: RESTPostAPIChannelMessageJSONBody = {
       content:
         "Looks like we’ve got some people headed for the gym!\n- <@" +
         arrivingUsers.join(">\n- <@") +
         ">",
+      allowed_mentions: {
+        replied_user: false,
+      },
+      message_reference: {
+        message_id: scheduleMessageID,
+      },
     };
     await fetch(`${DISCORD_API}/channels/${env.CHANNEL_ID}/messages`, {
       method: "POST",
