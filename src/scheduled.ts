@@ -1,5 +1,6 @@
 import {
   APIMessage,
+  AllowedMentionsTypes,
   ButtonStyle,
   ComponentType,
   RESTPostAPIChannelMessageJSONBody,
@@ -119,6 +120,7 @@ async function postReminder(env: Env, hour: number) {
         ">",
       allowed_mentions: {
         replied_user: false,
+        parse: [AllowedMentionsTypes.User],
       },
       message_reference: {
         message_id: scheduleMessageID,
