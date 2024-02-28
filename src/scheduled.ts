@@ -94,7 +94,7 @@ async function postSchedule(env: Env, weekdayInfo: Weekday) {
     color: 0x5865f2,
   });
 
-  const message = (await (
+  const message: APIMessage = await (
     await fetch(`${DISCORD_API}/channels/${env.CHANNEL_ID}/messages`, {
       method: "POST",
       body: JSON.stringify(messageSend),
@@ -103,7 +103,7 @@ async function postSchedule(env: Env, weekdayInfo: Weekday) {
         "Content-Type": "application/json",
       },
     })
-  ).json()) as APIMessage;
+  ).json();
 
   await clearArrivals(env.DB);
   await updateScheduleMessageID(env.DB, message.id);
