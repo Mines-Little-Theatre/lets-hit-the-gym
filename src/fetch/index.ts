@@ -1,6 +1,6 @@
 import { error, json, Router } from "itty-router";
 import { Env } from "../env.js";
-import { interactions } from "./interactions.js";
+import { interactions } from "./interactions/index.js";
 
 const router = Router<Request, [Env, ExecutionContext]>();
 

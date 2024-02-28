@@ -8,15 +8,15 @@ import {
   InteractionType,
   MessageFlags,
 } from "discord-api-types/v10";
-import { verifyKey } from "discord-interactions";
 import { error } from "itty-router";
-import { hourNames } from "../constants.js";
-import { Env } from "../env.js";
+import { hourNames } from "../../constants.js";
+import { Env } from "../../env.js";
 import {
   getAllArrivals,
   getScheduleMessageID,
   setUserArrivals,
-} from "../queries.js";
+} from "../../queries.js";
+import { validateInteraction } from "./validate-interaction.js";
 
 export async function interactions(
   request: Request,
@@ -26,9 +26,12 @@ export async function interactions(
   const timestamp = request.headers.get("x-signature-timestamp");
   const body = await request.arrayBuffer();
   if (
-    signature === null ||
-    timestamp === null ||
-    !verifyKey(body, signature, timestamp, env.DISCORD_PUBLIC_KEY)
+    !(await validateInteraction(
+      body,
+      signature,
+      timestamp,
+      env.DISCORD_PUBLIC_KEY,
+    ))
   ) {
     return error(401);
   }
